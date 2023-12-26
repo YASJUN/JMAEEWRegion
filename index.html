@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja-jp">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>緊急地震速報や震度情報で用いる区域名</title>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="jmaEewArea.json">
+</head>
+<style>
+    * {
+        font-size: 36px;
+    }
+</style>
+
+<body>
+    <input type="text" name="" id="keyword" placeholder="">
+    <button onclick="getregion()">Search</button>
+    <div>
+        <div></div>
+        <div id="result"></div>
+    </div>
+
+</body>
+<script>
+    // 异步函数，用于查找包含给定关键字的地区
+    async function searchLocation(keyword) {
+        try {
+            // 使用$.getJSON异步加载JSON数据
+            const jsonData = await new Promise((resolve, reject) => {
+                $.getJSON("jmaEewArea.json", data => {
+                    resolve(data);
+                }).fail(error => {
+                    reject(error);
+                });
+            });
+
+            const results = [];
+
+            // 遍历第一层，地方
+            for (const region in jsonData) {
+                // 遍历第二层，具体省份
+                for (const Prefecture in jsonData[region]) {
+                    // 遍历第三层，地区
+                    for (const area in jsonData[region][Prefecture]) {
+                        // 遍历第四层，具体位置
+                        for (const location of jsonData[region][Prefecture][area]) {
+                            // 使用正则表达式进行模糊匹配
+                            const regex = new RegExp(keyword, 'i');
+                            if (regex.test(location)) {
+                                results.push("地方:"+region);
+                                results.push("都府県道："+Prefecture);
+                                results.push("地域名:"+area);
+                                results.push("予報区の名称:"+location);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 去重和排序结果数组
+            const uniqueResults = [...new Set(results)].sort();
+            return uniqueResults;
+        } catch (error) {
+            console.error("An error occurred during the search:", error);
+            throw error; // 如果需要，将错误继续传播
+        }
+    }
+
+    // 示例
+    searchLocation("沖縄県与那国島")
+        .then(result => console.log(result))
+        .catch(error => console.error(error));
+        //予報区の名称:沖縄県与那国島 区域名:八重山 地方:九州地方 都府県道：沖縄県
+
+    function getregion() {
+        // 获取输入框的值
+        const keyword = document.getElementById('keyword').value;
+        // 调用异步函数
+        searchLocation(keyword).then(results => {
+            // 获取结果数组
+            console.log(results)
+            const result = results.join(' ');
+            // 显示结果
+            document.getElementById('result').innerHTML = result;
+        });
+    }
+
+    // 获取输入框的值
+    const keyword = document.getElementById('keyword');
+
+
+</script>
+
+</html>
